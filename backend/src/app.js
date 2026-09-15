@@ -11,22 +11,79 @@
 // usando multer com diskStorage. Não utilize provedores externos.
 
 const express = require('express');
+const config = require('./config');
+const { createDocumentRepository } = require('./repositories/documentRepository');
+const { createFileRepository } = require('./repositories/fileRepository');
+const { createDocumentService } = require('./services/documentService');
+const { createDocumentController } = require('./controllers/documentController');
+const { createDocumentRoutes } = require('./routes/documentRoutes');
 const { getHealthStatus } = require('./services/healthService');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(express.json());
 
-// Endpoint de verificação de saúde. As demais rotas (/upload, /documents,
-// /documents/:id/download) serão implementadas durante o Passo 2.
+const documentRepository = createDocumentRepository();
+const fileRepository = createFileRepository(config.storageDirectory);
+const documentService = createDocumentService({
+  documentRepository,
+  fileRepository,
+  allowedMimeTypes: config.allowedMimeTypes,
+});
+const documentController = createDocumentController({
+  documentService,
+  defaultOwner: config.defaultOwner,
+  allowUserHeader: config.allowUserHeader,
+});
+
+app.use(async (_request, _response, next) => {
+  try {
+    await fileRepository.ensureStorageDirectory();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use(createDocumentRoutes({
+  documentController,
+  storageDirectory: config.storageDirectory,
+  maxFileSize: config.maxFileSize,
+  allowedMimeTypes: config.allowedMimeTypes,
+}));
+
+app.use((error, _request, response, next) => {
+  if (!error) {
+    next();
+    return;
+  }
+
+  const isFileTooLarge = error.code === 'LIMIT_FILE_SIZE';
+  const isFileTypeNotAllowed = error.code === 'FILE_TYPE_NOT_ALLOWED';
+  response.status(isFileTooLarge ? 413 : isFileTypeNotAllowed ? 415 : 500).json({
+    error: {
+      code: isFileTooLarge
+        ? 'FILE_TOO_LARGE'
+        : isFileTypeNotAllowed ? 'FILE_TYPE_NOT_ALLOWED' : 'UPLOAD_ERROR',
+      message: isFileTooLarge
+        ? 'O arquivo excede o limite permitido.'
+        : isFileTypeNotAllowed ? error.message : 'Não foi possível processar o upload.',
+    },
+  });
+});
+
+// Endpoint de verificação de saúde para monitoramento local da aplicação.
 app.get('/health', (req, res) => {
   res.json(getHealthStatus());
 });
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`DMS backend ouvindo na porta ${PORT}`);
+  fileRepository.ensureStorageDirectory().then(() => {
+    app.listen(config.port, () => {
+      console.log(`DMS backend ouvindo na porta ${config.port}`);
+    });
+  }).catch((error) => {
+    console.error('Não foi possível preparar o armazenamento local.', error);
+    process.exitCode = 1;
   });
 }
 

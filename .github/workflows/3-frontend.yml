@@ -59,6 +59,12 @@ jobs:
           file: exercise-toolkit/markdown-templates/step-feedback/checking-work.md
           edit-mode: replace
 
+      - name: Executar build do frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
       - name: Verificar componentes e serviço
         id: check-frontend
         continue-on-error: true
