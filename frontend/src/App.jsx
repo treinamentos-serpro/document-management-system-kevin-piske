@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import DocumentList from './components/DocumentList';
-import UploadForm from './components/UploadForm';
+import UploadComponent from './components/UploadComponent';
 import { listDocuments } from './services/documentService';
 import './styles.css';
 
@@ -34,7 +34,7 @@ export default function App() {
       </header>
 
       <section className="workspace" aria-label="Gerenciamento de documentos">
-        <UploadForm
+        <UploadComponent
           onUploaded={(document) => {
             setDocuments((current) => [document, ...current]);
             setError('');
