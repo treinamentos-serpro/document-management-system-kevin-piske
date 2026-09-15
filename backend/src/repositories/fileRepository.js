@@ -7,17 +7,42 @@ function createFileRepository(storageDirectory) {
   }
 
   function getFilePath(storedName) {
-    return path.join(storageDirectory, storedName);
+    if (!storedName || storedName !== path.basename(storedName)) {
+      const error = new Error('Nome de arquivo inválido.');
+      error.code = 'INVALID_STORED_NAME';
+      throw error;
+    }
+
+    const storageRoot = path.resolve(storageDirectory);
+    const filePath = path.resolve(storageRoot, storedName);
+    if (filePath !== storageRoot && !filePath.startsWith(`${storageRoot}${path.sep}`)) {
+      const error = new Error('Caminho de arquivo inválido.');
+      error.code = 'INVALID_STORED_NAME';
+      throw error;
+    }
+
+    return filePath;
   }
 
   async function remove(storedName) {
     await fs.rm(getFilePath(storedName), { force: true });
   }
 
+  async function exists(storedName) {
+    try {
+      await fs.access(getFilePath(storedName));
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    }
+  }
+
   return {
     ensureStorageDirectory,
     getFilePath,
     remove,
+    exists,
   };
 }
 

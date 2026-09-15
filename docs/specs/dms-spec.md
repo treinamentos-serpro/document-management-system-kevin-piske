@@ -81,7 +81,7 @@ A coleção em memória deve manter os metadados necessários para localizar o a
 - `id` deve ser gerado no servidor e não pode ser aceito do cliente.
 - `storedName` deve ser derivado de um identificador seguro, sem permitir `..`, separadores de diretório ou sobrescrita intencional.
 - `originalName` deve ser normalizado para apresentação e tratado como dado não confiável.
-- `owner` deve ser obtido do contexto de usuário definido pela aplicação; na ausência de autenticação, o MVP pode usar `DEFAULT_OWNER` configurável.
+- `owner` deve ser obtido de um contexto de usuário autenticado; na ausência de autenticação, o MVP usa `DEFAULT_OWNER` configurável. O header `X-User-Id` só pode ser habilitado explicitamente em ambiente controlado com `TRUST_USER_HEADER=true` e não representa autenticação.
 - A remoção do processo reinicia os metadados, mesmo que os arquivos ainda existam no storage; a reconciliação desses arquivos não faz parte do MVP.
 
 ## 6. Contratos de API
@@ -102,7 +102,7 @@ Verifica a disponibilidade da aplicação.
 
 Recebe um documento.
 
-**Entrada:** `multipart/form-data`, com o campo `file` contendo um único arquivo. O usuário pode ser informado pelo mecanismo de contexto adotado, por exemplo `X-User-Id`; quando ausente, deve ser usado o usuário padrão configurado.
+**Entrada:** `multipart/form-data`, com o campo `file` contendo um único arquivo. O owner deve vir do contexto autenticado; quando ausente neste MVP, deve ser usado o usuário padrão configurado. `X-User-Id` é permitido apenas em ambiente controlado quando `TRUST_USER_HEADER=true`.
 
 **Resposta `201 Created`:**
 
@@ -123,7 +123,7 @@ Recebe um documento.
 
 Lista os documentos do usuário atual.
 
-**Entrada opcional:** contexto de usuário, como `X-User-Id`. A implementação pode aceitar um filtro explícito somente se ele não permitir acesso a documentos de outro usuário.
+**Entrada opcional:** contexto de usuário autenticado. A implementação não deve confiar em headers arbitrários para autorização; `X-User-Id` só pode funcionar com `TRUST_USER_HEADER=true` em ambiente controlado.
 
 **Resposta `200 OK`:**
 

@@ -11,6 +11,11 @@ body { margin: 0; min-width: 320px; }
 
 button, input { font: inherit; }
 
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 3px solid #bf634d;
+  outline-offset: 3px;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: clamp(2rem, 7vw, 6rem) clamp(1.25rem, 8vw, 9rem);
@@ -41,6 +46,7 @@ input[type='file'] { flex: 1 1 260px; padding: 0.7rem; border: 1px dashed #8ca6a
 button, .download-link { border: 0; padding: 0.75rem 1rem; background: #46756d; color: white; cursor: pointer; font: 700 0.85rem 'Trebuchet MS', sans-serif; text-decoration: none; }
 button:disabled { cursor: wait; opacity: 0.6; }
 .error-message { padding: 0.75rem 1rem; background: #f7d9d1; color: #873f32; font-family: 'Trebuchet MS', sans-serif; }
+.status-message { min-height: 1.4rem; color: #46756d; font-family: 'Trebuchet MS', sans-serif; }
 .list-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 2rem; }
 h2 { margin: 0; font-size: 1.8rem; }
 .refresh-button { padding: 0.45rem 0.7rem; background: transparent; color: #46756d; border: 1px solid #8ca6a2; }
@@ -55,4 +61,13 @@ h2 { margin: 0; font-size: 1.8rem; }
   .app-shell { padding: 2.5rem 1rem; }
   .document-item { align-items: flex-start; flex-direction: column; }
   .download-link { align-self: stretch; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

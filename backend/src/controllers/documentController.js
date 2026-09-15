@@ -1,14 +1,15 @@
-function createDocumentController({ documentService, defaultOwner }) {
+function createDocumentController({ documentService, defaultOwner, allowUserHeader }) {
   function getOwner(request) {
-    return request.get('X-User-Id') || defaultOwner;
+    return allowUserHeader ? request.get('X-User-Id') || defaultOwner : defaultOwner;
   }
 
   function sendError(response, error) {
-    const statusCode = error.statusCode || 500;
+    const isMissingFile = error.code === 'ENOENT';
+    const statusCode = error.statusCode || (isMissingFile ? 404 : 500);
     response.status(statusCode).json({
       error: {
-        code: error.code || 'INTERNAL_ERROR',
-        message: statusCode === 500 ? 'Erro interno do servidor.' : error.message,
+        code: isMissingFile ? 'DOCUMENT_NOT_FOUND' : error.code || 'INTERNAL_ERROR',
+        message: statusCode === 500 ? 'Erro interno do servidor.' : 'Documento não encontrado.',
       },
     });
   }
@@ -32,7 +33,7 @@ function createDocumentController({ documentService, defaultOwner }) {
 
   async function download(request, response) {
     try {
-      const document = documentService.resolveDownload(request.params.id, getOwner(request));
+      const document = await documentService.resolveDownload(request.params.id, getOwner(request));
       response.download(document.filePath, document.originalName, {
         headers: { 'Content-Type': document.mimeType },
       }, (error) => {

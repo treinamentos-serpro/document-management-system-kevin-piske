@@ -58,6 +58,12 @@ jobs:
           file: exercise-toolkit/markdown-templates/step-feedback/checking-work.md
           edit-mode: replace
 
+      - name: Executar testes do backend
+        working-directory: backend
+        run: |
+          npm ci
+          npm test
+
       - name: Verificar camadas do backend
         id: check-layers
         continue-on-error: true

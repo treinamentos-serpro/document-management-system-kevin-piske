@@ -7,8 +7,8 @@ async function parseResponse(response) {
   throw new Error(body.error?.message || 'Não foi possível concluir a operação.');
 }
 
-export async function listDocuments() {
-  const response = await parseResponse(await fetch('/api/documents'));
+export async function listDocuments(options = {}) {
+  const response = await parseResponse(await fetch('/api/documents', options));
   return (await response.json()).documents;
 }
 

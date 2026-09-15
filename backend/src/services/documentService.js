@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
+const path = require('node:path');
 
-function createDocumentService({ documentRepository, fileRepository }) {
+function createDocumentService({ documentRepository, fileRepository, allowedMimeTypes }) {
   function toPublicDocument(document) {
     const { storedName, ...publicDocument } = document;
     return publicDocument;
@@ -14,9 +15,18 @@ function createDocumentService({ documentRepository, fileRepository }) {
       throw error;
     }
 
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      const error = new Error('Tipo de arquivo não permitido.');
+      error.code = 'FILE_TYPE_NOT_ALLOWED';
+      error.statusCode = 415;
+      throw error;
+    }
+
+    const originalName = path.basename(file.originalname || '').replace(/[\u0000-\u001f\u007f]/g, '').trim() || 'documento';
+
     const document = {
       id: crypto.randomUUID(),
-      originalName: file.originalname,
+      originalName,
       storedName: file.filename,
       size: file.size,
       mimeType: file.mimetype || 'application/octet-stream',
@@ -36,9 +46,16 @@ function createDocumentService({ documentRepository, fileRepository }) {
     return documentRepository.findByOwner(owner).map(toPublicDocument);
   }
 
-  function resolveDownload(id, owner) {
+  async function resolveDownload(id, owner) {
     const document = documentRepository.findById(id);
     if (!document || document.owner !== owner) {
+      const error = new Error('Documento não encontrado.');
+      error.code = 'DOCUMENT_NOT_FOUND';
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (!(await fileRepository.exists(document.storedName))) {
       const error = new Error('Documento não encontrado.');
       error.code = 'DOCUMENT_NOT_FOUND';
       error.statusCode = 404;

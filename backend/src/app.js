@@ -12,7 +12,7 @@
 
 const express = require('express');
 const config = require('./config');
-const documentRepository = require('./repositories/documentRepository');
+const { createDocumentRepository } = require('./repositories/documentRepository');
 const { createFileRepository } = require('./repositories/fileRepository');
 const { createDocumentService } = require('./services/documentService');
 const { createDocumentController } = require('./controllers/documentController');
@@ -21,17 +21,33 @@ const { createDocumentRoutes } = require('./routes/documentRoutes');
 const app = express();
 app.use(express.json());
 
+const documentRepository = createDocumentRepository();
 const fileRepository = createFileRepository(config.storageDirectory);
-const documentService = createDocumentService({ documentRepository, fileRepository });
+const documentService = createDocumentService({
+  documentRepository,
+  fileRepository,
+  allowedMimeTypes: config.allowedMimeTypes,
+});
 const documentController = createDocumentController({
   documentService,
   defaultOwner: config.defaultOwner,
+  allowUserHeader: config.allowUserHeader,
+});
+
+app.use(async (_request, _response, next) => {
+  try {
+    await fileRepository.ensureStorageDirectory();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use(createDocumentRoutes({
   documentController,
   storageDirectory: config.storageDirectory,
   maxFileSize: config.maxFileSize,
+  allowedMimeTypes: config.allowedMimeTypes,
 }));
 
 app.use((error, _request, response, next) => {
@@ -41,12 +57,15 @@ app.use((error, _request, response, next) => {
   }
 
   const isFileTooLarge = error.code === 'LIMIT_FILE_SIZE';
-  response.status(isFileTooLarge ? 413 : 500).json({
+  const isFileTypeNotAllowed = error.code === 'FILE_TYPE_NOT_ALLOWED';
+  response.status(isFileTooLarge ? 413 : isFileTypeNotAllowed ? 415 : 500).json({
     error: {
-      code: isFileTooLarge ? 'FILE_TOO_LARGE' : 'UPLOAD_ERROR',
+      code: isFileTooLarge
+        ? 'FILE_TOO_LARGE'
+        : isFileTypeNotAllowed ? 'FILE_TYPE_NOT_ALLOWED' : 'UPLOAD_ERROR',
       message: isFileTooLarge
         ? 'O arquivo excede o limite permitido.'
-        : 'Não foi possível processar o upload.',
+        : isFileTypeNotAllowed ? error.message : 'Não foi possível processar o upload.',
     },
   });
 });

@@ -8,11 +8,11 @@ function formatSize(size) {
 
 export default function DocumentList({ documents, isLoading }) {
   if (isLoading) {
-    return <p className="feedback">Carregando documentos...</p>;
+    return <p className="feedback" role="status" aria-live="polite">Carregando documentos...</p>;
   }
 
   if (documents.length === 0) {
-    return <p className="feedback">Nenhum documento enviado ainda.</p>;
+    return <p className="feedback" role="status">Nenhum documento enviado ainda.</p>;
   }
 
   return (
@@ -23,7 +23,7 @@ export default function DocumentList({ documents, isLoading }) {
             <strong>{document.originalName}</strong>
             <span>{formatSize(document.size)} · {new Date(document.uploadedAt).toLocaleString()}</span>
           </div>
-          <DownloadButton documentId={document.id} />
+          <DownloadButton documentId={document.id} documentName={document.originalName} />
         </li>
       ))}
     </ul>
