@@ -17,6 +17,7 @@ const { createFileRepository } = require('./repositories/fileRepository');
 const { createDocumentService } = require('./services/documentService');
 const { createDocumentController } = require('./controllers/documentController');
 const { createDocumentRoutes } = require('./routes/documentRoutes');
+const { getHealthStatus } = require('./services/healthService');
 
 const app = express();
 app.use(express.json());
@@ -72,7 +73,7 @@ app.use((error, _request, response, next) => {
 
 // Endpoint de verificação de saúde para monitoramento local da aplicação.
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json(getHealthStatus());
 });
 
 if (require.main === module) {
