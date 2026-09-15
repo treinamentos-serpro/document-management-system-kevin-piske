@@ -5,8 +5,7 @@ const http = require('node:http');
 const app = require('../src/app');
 const config = require('../src/config');
 
-// Teste de fumaça do seed: garante que o app Express foi exportado.
-// Novos testes serão adicionados durante os Steps 2, 6 e 7 com auxílio do Copilot.
+// Garante que o app Express seja exportado para uso pelo servidor e pelos testes.
 test('o app backend é exportado', () => {
   assert.ok(app, 'o app deve estar definido');
   assert.strictEqual(typeof app, 'function', 'o app Express deve ser uma função');
@@ -64,6 +63,8 @@ test('rejeita tipo MIME não permitido', async () => {
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
 test('GET /health responde com status ok', async (t) => {
   const server = http.createServer(app);
 
